@@ -52,17 +52,17 @@ export const actionNotAllowedMessage = () => {
 }
 
 export const monthStatisticMessage = (data) => {
-  return `💰 En este mes gastaste ${data} ₡`
+  return `💰 En este mes gastaste ${data.toLocaleString()} ₡`
 }
 
 export const yearStatisticMessage = (data) => {
-  return `💰 En este año gastaste ${data} ₡`
+  return `💰 En este año gastaste ${data.toLocaleString()} ₡`
 }
 
 export const totalStatisticMessage = (data) => {
-  return `💰 En total gastaste ${data} ₡`
+  return `💰 En total gastaste ${data.toLocaleString()} ₡`
 }
 
 export const userFilledTankMessage = (username, amount) => {
-  return `⛽️ ${username} llenó el tanque por ${amount} ₡`
+  return `⛽️ ${username} llenó el tanque por ${amount.toLocaleString()} ₡`
 }

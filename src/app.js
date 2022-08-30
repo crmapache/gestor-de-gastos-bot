@@ -95,6 +95,7 @@ class App {
 
       if (this.adminIds.includes(userId)) {
         this.notifyWhenUserFillTank[userId] = true
+
         await this.sendMessage(userId, successfullyChangedMessage())
       } else {
         await this.sendMessage(userId, actionNotAllowedMessage())
@@ -106,6 +107,7 @@ class App {
 
       if (this.adminIds.includes(userId)) {
         this.notifyWhenUserFillTank[userId] = false
+
         await this.sendMessage(userId, successfullyChangedMessage())
       } else {
         await this.sendMessage(userId, actionNotAllowedMessage())
