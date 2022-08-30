@@ -1,11 +1,7 @@
-import db from './db.js'
-import {
-  getCurrentCostaRicaTime,
-  prepareMonthStatisticMessage,
-  prepareTotalStatisticMessage,
-  prepareYearStatisticMessage,
-} from './helpers.js'
 import dayjs from 'dayjs'
+
+import db from './db.js'
+import { getCurrentCostaRicaTime } from './helpers.js'
 
 export const addQuery = (userId, userName, amount, messageId) => {
   const time = getCurrentCostaRicaTime()
@@ -31,16 +27,14 @@ export const deleteMutation = (userId) => {
 export const getMonthStatisticQuery = (userId) => {
   return new Promise((resolve) => {
     db.query(`SELECT * FROM records WHERE user_id = '${userId}'`, (err, data) => {
-      const result = data.filter((el) => {
+      const result = data.filter(({ created_at }) => {
         return (
-          dayjs(el.created_at).format('YY') === dayjs().format('YY') &&
-          dayjs(el.created_at).format('M') === dayjs().format('M')
+          dayjs(created_at).format('YY') === dayjs().format('YY') &&
+          dayjs(created_at).format('M') === dayjs().format('M')
         )
       })
 
-      const message = prepareMonthStatisticMessage(result)
-
-      resolve(message)
+      resolve(result)
     })
   })
 }
@@ -48,11 +42,11 @@ export const getMonthStatisticQuery = (userId) => {
 export const getYearStatisticQuery = (userId) => {
   return new Promise((resolve) => {
     db.query(`SELECT * FROM records WHERE user_id = '${userId}'`, (err, data) => {
-      const result = data.filter((el) => dayjs(el.created_at).format('YY') === dayjs().format('YY'))
+      const result = data.filter(
+        ({ created_at }) => dayjs(created_at).format('YY') === dayjs().format('YY'),
+      )
 
-      const message = prepareYearStatisticMessage(result)
-
-      resolve(message)
+      resolve(result)
     })
   })
 }
@@ -60,9 +54,15 @@ export const getYearStatisticQuery = (userId) => {
 export const getTotalStatisticQuery = (userId) => {
   return new Promise((resolve) => {
     db.query(`SELECT * FROM records WHERE user_id = '${userId}'`, (err, data) => {
-      const message = prepareTotalStatisticMessage(data)
+      resolve(data)
+    })
+  })
+}
 
-      resolve(message)
+export const getAllUsersIdsQuery = () => {
+  return new Promise((resolve) => {
+    db.query(`SELECT user_id FROM records GROUP BY user_id`, (err, data) => {
+      resolve(data)
     })
   })
 }

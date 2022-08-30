@@ -9,17 +9,18 @@ export const getCurrentCostaRicaTime = () => {
   return dayjs().tz('America/Costa_Rica').format('YYYY[-]MM[-]DD HH[:]mm[:]ss')
 }
 
-export const prepareMonthStatisticMessage = (data) => {
-  const amount = data.reduce((sum, el) => sum + +el.amount, 0)
-  return `💰 En este mes gastaste ${amount.toLocaleString()} ₡`
+export const createSendMessage = (fn) => {
+  return (userId, message) => {
+    return new Promise((resolve) => {
+      fn(userId, message)
+        .then(() => {
+          resolve()
+        })
+        .catch(() => {})
+    })
+  }
 }
 
-export const prepareYearStatisticMessage = (data) => {
-  const amount = data.reduce((sum, el) => sum + +el.amount, 0)
-  return `💰 En este año gastaste ${amount.toLocaleString()} ₡`
-}
-
-export const prepareTotalStatisticMessage = (data) => {
-  const amount = data.reduce((sum, el) => sum + +el.amount, 0)
-  return `💰 En total gastaste ${amount.toLocaleString()} ₡`
+export const calculateSum = (data, fieldKey = 'amount') => {
+  return data.reduce((sum, el) => sum + +el[fieldKey], 0)
 }
