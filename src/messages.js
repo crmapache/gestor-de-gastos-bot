@@ -16,7 +16,19 @@ export const helpMessage = () => {
     '/month - estatistica por este mes\n' +
     '/year - estatistica por este año\n' +
     '/total - estadística por todo el tiempo\n\n' +
-    '/delete - borrar monto previamente ingresado\n'
+    '/delete - borrar monto previamente ingresado'
+  )
+}
+
+export const adminHelpMessage = () => {
+  return (
+    '/help - todos los comandos\n\n' +
+    '/month - estatistica por este mes\n' +
+    '/year - estatistica por este año\n' +
+    '/total - estadística por todo el tiempo\n\n' +
+    '/delete - borrar monto previamente ingresado\n\n' +
+    '/user_fill_tank_on - notify when user fill tank\n' +
+    '/user_fill_tank_off - not notify when user fill tank\n'
   )
 }
 
@@ -31,6 +43,15 @@ export const successfullyRecordedMessage = () => {
 export const successfullyDeletedMessage = () => {
   return '✅ eliminado'
 }
+
+export const successfullyChangedMessage = () => {
+  return '✅ cambiado'
+}
+
+export const actionNotAllowedMessage = () => {
+  return '⛔️ acción no permitida'
+}
+
 export const monthStatisticMessage = (data) => {
   return `💰 En este mes gastaste ${data} ₡`
 }
@@ -41,4 +62,8 @@ export const yearStatisticMessage = (data) => {
 
 export const totalStatisticMessage = (data) => {
   return `💰 En total gastaste ${data} ₡`
+}
+
+export const userFilledTankMessage = (username, amount) => {
+  return `⛽️ ${username} llenó el tanque por ${amount} ₡`
 }
