@@ -21,14 +21,13 @@ export const helpMessage = () => {
 }
 
 export const adminHelpMessage = () => {
+  const basicMessage = helpMessage()
+
   return (
-    '/help - todos los comandos\n\n' +
-    '/month - estatistica por este mes\n' +
-    '/year - estatistica por este año\n' +
-    '/total - estadística por todo el tiempo\n\n' +
-    '/delete - borrar monto previamente ingresado\n\n' +
+    basicMessage +
+    '\n\n' +
     '/user_fill_tank_on - notify when user fill tank\n' +
-    '/user_fill_tank_off - not notify when user fill tank\n'
+    '/user_fill_tank_off - not notify when user fill tank'
   )
 }
 
