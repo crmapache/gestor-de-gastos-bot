@@ -2,7 +2,7 @@ import express from 'express'
 import { Telegraf } from 'telegraf'
 import dotenv from 'dotenv'
 
-import { calculateSum, createSendMessage } from './helpers.js'
+import { calculateMonthsSum, calculateSum, createSendMessage } from './helpers.js'
 import { startMonthlyNotificationTimer } from './timers.js'
 import {
   actionNotAllowedMessage,
@@ -20,6 +20,7 @@ import {
   yearStatisticMessage,
 } from './messages.js'
 import {
+  addFakeDataQuery,
   addQuery,
   deleteMutation,
   getMonthStatisticQuery,
@@ -71,16 +72,18 @@ class App {
       const userId = ctx.update.message.from.id
       const statisticData = await getYearStatisticQuery(userId)
       const sum = calculateSum(statisticData)
+      const monthsSum = calculateMonthsSum(statisticData)
 
-      await this.sendMessage(userId, yearStatisticMessage(sum))
+      await this.sendMessage(userId, yearStatisticMessage(sum, monthsSum), { parse_mode: 'HTML' })
     })
 
     this.bot.command('total', async (ctx) => {
       const userId = ctx.update.message.from.id
       const statisticData = await getTotalStatisticQuery(userId)
       const sum = calculateSum(statisticData)
+      const monthsSum = calculateMonthsSum(statisticData)
 
-      await this.sendMessage(userId, totalStatisticMessage(sum))
+      await this.sendMessage(userId, totalStatisticMessage(sum, monthsSum), { parse_mode: 'HTML' })
     })
 
     this.bot.command('delete', async (ctx) => {
@@ -118,18 +121,16 @@ class App {
       const userId = ctx.update.message.from.id
       const userName = ctx.update.message.from.first_name
       const amount = ctx.update.message.text
-      const messageId = ctx.update.message.message_id
 
       if (!isNaN(amount)) {
-        await addQuery(userId, userName, amount, messageId)
+        await addQuery(userId, userName, amount)
         await this.sendMessage(userId, successfullyRecordedMessage())
 
-        if (this.adminIds.includes(userId) && this.notifyWhenUserFillTank) {
-          this.broadcast(
-            this.adminIds.filter((id) => id !== userId),
-            userFilledTankMessage(userName, amount),
-          )
-        }
+        const adminsIdsToNotify = this.adminIds.filter(
+          (adminId) => adminId !== userId && this.notifyWhenUserFillTank[adminId],
+        )
+
+        this.broadcast(adminsIdsToNotify, userFilledTankMessage(userName, amount))
       } else {
         await this.sendMessage(userId, incorrectAmountMessage())
       }
@@ -143,3 +144,5 @@ class App {
 
 const app = new App(process.env.PORT, process.env.TOKEN, process.env.ADMIN_IDS)
 app.start()
+
+// addFakeDataQuery()
