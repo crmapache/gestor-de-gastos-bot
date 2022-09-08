@@ -1,4 +1,5 @@
-import { addExtraSpacesToTitle, searchTitleMaxLength } from './helpers.js'
+import { addExtraSpacesToTitle, getTitleMaxLength, searchTitleMaxLength } from './helpers.js'
+import dayjs from 'dayjs'
 
 export const welcomeMessage = () => {
   return 'Bienvenido!🎉\n' + 'Este bot te ayudará calcular gastos de gasolina 📝'
@@ -15,6 +16,7 @@ export const instructionsMessage = () => {
 export const helpMessage = () => {
   return (
     '/help - todos los comandos\n\n' +
+    '/list - obtener los datos más recientes\n' +
     '/month - estatistica por este mes\n' +
     '/year - estatistica por este año\n' +
     '/total - estadística por todo el tiempo\n\n' +
@@ -53,85 +55,90 @@ export const actionNotAllowedMessage = () => {
   return '⛔️ acción no permitida'
 }
 
-export const monthStatisticMessage = (data) => {
-  return `💰 En este mes gastaste ${data.toLocaleString()} ₡`
+export const listStatisticTitleMessage = () => {
+  return '📜 Aquí está tu lista de gastos recientes'
 }
 
-export const yearStatisticMessage = (totalSum, monthsSumData) => {
-  let result = `💰 En este año gastaste ${totalSum.toLocaleString()} ₡\n\n`
-  let maxTitleLength = searchTitleMaxLength(monthsSumData)
+export const monthStatisticMessage = (sum) => {
+  return `💰 En este mes gastaste ${sum.toLocaleString()} ₡`
+}
 
-  for (const key in monthsSumData) {
-    const month = key.replace(/[^a-zA-Z]/g, '')
+export const monthStatisticAdminMessage = (data) => {
+  const maxTitleLength = getTitleMaxLength(data)
+  let result = ''
 
-    let titleWithSpaces = addExtraSpacesToTitle(month, maxTitleLength)
+  for (const userName in data) {
+    const sum = data[userName]
+    const titleWithSpaces = addExtraSpacesToTitle(userName, maxTitleLength)
 
-    result += `<code>${titleWithSpaces} - ${monthsSumData[key].toLocaleString()} ₡</code>\n`
+    result += `<code>${titleWithSpaces} - ${sum.toLocaleString()} ₡</code>\n`
   }
 
   return result
 }
 
-export const totalStatisticMessage = (totalSum, monthsSumData) => {
-  const prepareData = (data) => {
-    const dataDividedByYears = Object.entries(data).reduce((acc, cur) => {
-      const year = cur[0].replace(/\D/g, '')
+export const yearStatisticMessage = (sum) => {
+  return `💰 En este año gastaste ${sum.toLocaleString()} ₡`
+}
 
-      if (acc[year] === undefined) {
-        acc[year] = []
-      }
+export const yearExtendedStatisticMessage = (data) => {
+  const preparedData = data.reduce((acc, cur) => ({ ...acc, [cur.month]: cur.sum }), {})
+  const preparedDataForGetMaxTitleLength = {}
+  let result = ''
 
-      acc[year].push(cur)
+  for (let i = 1; i <= 12; i++) {
+    let label = dayjs(`2000-${i}-01`).format('MMMM')
+    label = `${label[0].toUpperCase()}${label.slice(1)}`
 
-      return acc
-    }, {})
-
-    return Object.entries(dataDividedByYears)
-      .reverse()
-      .reduce((acc, cur) => {
-        cur[1].forEach((el) => {
-          acc[el[0]] = el[1]
-        })
-
-        return acc
-      }, {})
+    preparedDataForGetMaxTitleLength[label] = preparedData[i] || 0
   }
 
-  const getYearSum = (year, data) => {
-    return data.reduce((sum, [title, monthSum]) => {
-      const currentYear = title.replace(/\D/g, '')
-      if (currentYear === year) {
-        return sum + monthSum
-      }
+  const maxTitleLength = getTitleMaxLength(preparedDataForGetMaxTitleLength)
 
-      return sum
-    }, 0)
+  for (const month in preparedDataForGetMaxTitleLength) {
+    const sum = preparedDataForGetMaxTitleLength[month]
+    const titleWithSpaces = addExtraSpacesToTitle(month, maxTitleLength)
+
+    result += `<code>${titleWithSpaces} - ${sum.toLocaleString()} ₡</code>\n`
   }
 
-  let result = `💰 En total gastaste ${totalSum.toLocaleString()} ₡\n`
-  const preparedData = prepareData(monthsSumData)
-  const maxTitleLength = searchTitleMaxLength(preparedData)
+  return result
+}
 
-  Object.entries(preparedData).forEach(([title, monthSum], index, data) => {
-    const prevYear = data[index - 1] && data[index - 1][0].replace(/\D/g, '')
-    const currentYear = title.replace(/\D/g, '')
+export const totalStatisticMessage = (sum) => {
+  return `💰 En total gastaste ${sum.toLocaleString()} ₡`
+}
 
-    if (prevYear === currentYear) {
-      const month = title.replace(/[^a-zA-Z]/g, '')
-      const titleWithSpaces = addExtraSpacesToTitle(month, maxTitleLength)
+export const totalExtendedStatisticMessage = (data) => {
+  let result = ''
 
-      result += `<code>${titleWithSpaces} - ${monthSum.toLocaleString()} ₡</code>\n`
-    } else {
-      const yearSum = getYearSum(currentYear, data)
-      const titleWithSpaces = addExtraSpacesToTitle(currentYear, maxTitleLength)
-
-      result += `\n\n<code>${titleWithSpaces} - ${yearSum.toLocaleString()} ₡</code>\n\n`
-    }
-  })
+  for (const el of data) {
+    result += `<code>${el.sum.toLocaleString()} ₡ - ${el.year}</code>\n`
+  }
 
   return result
 }
 
 export const userFilledTankMessage = (username, amount) => {
   return `⛽️ ${username} llenó el tanque por ${amount.toLocaleString()} ₡`
+}
+
+export const listStatisticMessage = (data) => {
+  let result = ''
+
+  const preparedData = data.reduce(
+    (acc, cur) => ({ ...acc, [`${cur.amount.toLocaleString()} ₡`]: '' }),
+    {},
+  )
+
+  const maxTitleLength = getTitleMaxLength(preparedData)
+
+  data.forEach(({ amount, created_at }) => {
+    const date = dayjs(created_at).format('DD.MM.YYYY')
+    const titleWithSpaces = addExtraSpacesToTitle(`${amount.toLocaleString()} ₡`, maxTitleLength)
+
+    result += `<code>${titleWithSpaces} - ${date}</code>\n`
+  })
+
+  return result
 }

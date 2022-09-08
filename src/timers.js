@@ -1,6 +1,6 @@
 import dayjs from 'dayjs'
 
-import { calculateSum, getCurrentCostaRicaTime } from './helpers.js'
+import { getCurrentCostaRicaTime } from './helpers.js'
 import { getAllUsersIdsQuery, getMonthStatisticQuery } from './queries.js'
 import { monthStatisticMessage } from './messages.js'
 

@@ -2,7 +2,7 @@ import express from 'express'
 import { Telegraf } from 'telegraf'
 import dotenv from 'dotenv'
 
-import { calculateMonthsSum, calculateSum, createSendMessage } from './helpers.js'
+import { createSendMessage } from './helpers.js'
 import { startMonthlyNotificationTimer } from './timers.js'
 import {
   actionNotAllowedMessage,
@@ -10,21 +10,31 @@ import {
   helpMessage,
   incorrectAmountMessage,
   instructionsMessage,
+  listStatisticMessage,
+  listStatisticTitleMessage,
+  monthStatisticAdminMessage,
   monthStatisticMessage,
   successfullyChangedMessage,
   successfullyDeletedMessage,
   successfullyRecordedMessage,
+  totalExtendedStatisticMessage,
   totalStatisticMessage,
   userFilledTankMessage,
   welcomeMessage,
+  yearExtendedStatisticMessage,
   yearStatisticMessage,
 } from './messages.js'
 import {
   addFakeDataQuery,
   addQuery,
   deleteMutation,
+  getAllUsersIdsQuery,
+  getListStatisticQuery,
   getMonthStatisticQuery,
+  getTotalExtendedStatisticQuery,
   getTotalStatisticQuery,
+  getUserNameByIdQuery,
+  getYearExtendedStatisticQuery,
   getYearStatisticQuery,
 } from './queries.js'
 
@@ -62,28 +72,56 @@ class App {
 
     this.bot.command('month', async (ctx) => {
       const userId = ctx.update.message.from.id
-      const statisticData = await getMonthStatisticQuery(userId)
-      const sum = calculateSum(statisticData)
+      const sum = await getMonthStatisticQuery(userId)
 
       await this.sendMessage(userId, monthStatisticMessage(sum))
+
+      if (this.adminIds.includes(userId)) {
+        const allUsersIdsData = await getAllUsersIdsQuery()
+        const allUsersIdsExceptCurrentUser = allUsersIdsData.filter((el) => +el.user_id !== userId)
+        const monthSumForEachUser = {}
+
+        for (const el of allUsersIdsExceptCurrentUser) {
+          const id = el.user_id
+          const userName = await getUserNameByIdQuery(id)
+          monthSumForEachUser[userName] = await getMonthStatisticQuery(id)
+        }
+
+        await this.sendMessage(userId, monthStatisticAdminMessage(monthSumForEachUser), {
+          parse_mode: 'HTML',
+        })
+      }
     })
 
     this.bot.command('year', async (ctx) => {
       const userId = ctx.update.message.from.id
-      const statisticData = await getYearStatisticQuery(userId)
-      const sum = calculateSum(statisticData)
-      const monthsSum = calculateMonthsSum(statisticData)
+      const sum = await getYearStatisticQuery(userId)
+      const monthsSum = await getYearExtendedStatisticQuery(userId)
 
-      await this.sendMessage(userId, yearStatisticMessage(sum, monthsSum), { parse_mode: 'HTML' })
+      await this.sendMessage(userId, yearStatisticMessage(sum))
+      await this.sendMessage(userId, yearExtendedStatisticMessage(monthsSum), {
+        parse_mode: 'HTML',
+      })
     })
 
     this.bot.command('total', async (ctx) => {
       const userId = ctx.update.message.from.id
-      const statisticData = await getTotalStatisticQuery(userId)
-      const sum = calculateSum(statisticData)
-      const monthsSum = calculateMonthsSum(statisticData)
+      const sum = await getTotalStatisticQuery(userId)
+      const yearsSum = await getTotalExtendedStatisticQuery(userId)
 
-      await this.sendMessage(userId, totalStatisticMessage(sum, monthsSum), { parse_mode: 'HTML' })
+      await this.sendMessage(userId, totalStatisticMessage(sum))
+      await this.sendMessage(userId, totalExtendedStatisticMessage(yearsSum), {
+        parse_mode: 'HTML',
+      })
+    })
+
+    this.bot.hears(/^\/list(_\d+)?$/, async (ctx) => {
+      const userId = ctx.update.message.from.id
+      const recordsAmount = (ctx.match[1] && +ctx.match[1].replace('_', '')) || 10
+      const statisticData = await getListStatisticQuery(userId, recordsAmount)
+
+      await this.sendMessage(userId, listStatisticTitleMessage())
+      await this.sendMessage(userId, listStatisticMessage(statisticData), { parse_mode: 'HTML' })
     })
 
     this.bot.command('delete', async (ctx) => {
@@ -144,5 +182,3 @@ class App {
 
 const app = new App(process.env.PORT, process.env.TOKEN, process.env.ADMIN_IDS)
 app.start()
-
-// addFakeDataQuery()

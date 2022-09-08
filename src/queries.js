@@ -23,7 +23,7 @@ export const addFakeDataQuery = () => {
 
   const users = [
     { id: '437777592', name: 'Max' },
-    { id: '1494567197 ', name: 'Mauricio' },
+    { id: '1494567197', name: 'Mauricio' },
     { id: '425001403', name: 'Nikolay' },
   ]
 
@@ -75,43 +75,85 @@ export const deleteMutation = (userId) => {
 
 export const getMonthStatisticQuery = (userId) => {
   return new Promise((resolve) => {
-    db.query(`SELECT * FROM records WHERE user_id = '${userId}'`, (err, data) => {
-      const result = data.filter(({ created_at }) => {
-        return (
-          dayjs(created_at).format('YY') === dayjs().format('YY') &&
-          dayjs(created_at).format('M') === dayjs().format('M')
-        )
-      })
-
-      resolve(result)
-    })
+    db.query(
+      `SELECT COALESCE(SUM(amount), 0) as sum FROM records WHERE
+        user_id = '${userId}'
+        AND MONTH(created_at) = MONTH(now()) - 1
+        AND YEAR(created_at) = YEAR(now())`,
+      (err, data) => resolve(data[0]?.sum || 0),
+    )
   })
 }
 
 export const getYearStatisticQuery = (userId) => {
   return new Promise((resolve) => {
-    db.query(`SELECT * FROM records WHERE user_id = '${userId}'`, (err, data) => {
-      const result = data.filter(
-        ({ created_at }) => dayjs(created_at).format('YY') === dayjs().format('YY'),
-      )
+    db.query(
+      `SELECT COALESCE(SUM(amount), 0) as sum FROM records WHERE
+        user_id = '${userId}'
+        AND YEAR(created_at) = YEAR(now())`,
+      (err, data) => resolve(data[0]?.sum || 0),
+    )
+  })
+}
 
-      resolve(result)
-    })
+export const getYearExtendedStatisticQuery = (userId) => {
+  return new Promise((resolve) => {
+    db.query(
+      `SELECT COALESCE(SUM(amount), 0) as sum, MONTH(created_at) as month FROM records WHERE
+        user_id = '${userId}'
+        AND YEAR(created_at) = YEAR(now()) GROUP BY MONTH(created_at)`,
+      (err, data) => resolve(data),
+    )
   })
 }
 
 export const getTotalStatisticQuery = (userId) => {
   return new Promise((resolve) => {
-    db.query(`SELECT * FROM records WHERE user_id = '${userId}'`, (err, data) => {
-      resolve(data)
-    })
+    db.query(
+      `SELECT COALESCE(SUM(amount), 0) as sum FROM records WHERE user_id = '${userId}'`,
+      (err, data) => resolve(data[0]?.sum || 0),
+    )
+  })
+}
+
+export const getTotalExtendedStatisticQuery = (userId) => {
+  return new Promise((resolve) => {
+    db.query(
+      `SELECT COALESCE(SUM(amount), 0) as sum, YEAR(created_at) as year FROM records WHERE
+        user_id = '${userId}'
+        GROUP BY YEAR(created_at) ORDER BY YEAR(created_at) DESC`,
+      (err, data) => resolve(data),
+    )
   })
 }
 
 export const getAllUsersIdsQuery = () => {
   return new Promise((resolve) => {
-    db.query(`SELECT user_id FROM records GROUP BY user_id`, (err, data) => {
-      resolve(data)
-    })
+    db.query(`SELECT user_id FROM records GROUP BY user_id`, (err, data) => resolve(data))
+  })
+}
+
+export const getListStatisticQuery = (userId, limit) => {
+  return new Promise((resolve) => {
+    db.query(
+      `SELECT amount, created_at FROM records
+        WHERE user_id = '${userId}'
+        ORDER BY created_at DESC LIMIT ${limit}`,
+      (err, data) => resolve(data),
+    )
+  })
+}
+
+export const getUserNameByIdQuery = (userId) => {
+  return new Promise((resolve) => {
+    db.query(
+      `SELECT user_name FROM records
+        WHERE user_id = '${userId}'
+        LIMIT 1`,
+      (err, data) => {
+        const userName = data[0]?.user_name
+        resolve(userName || '')
+      },
+    )
   })
 }
