@@ -1,28 +1,42 @@
 import dayjs from 'dayjs'
 
-import { getCurrentCostaRicaTime } from './helpers.js'
-import { getAllUsersIdsQuery, getMonthStatisticQuery } from './queries.js'
-import { monthStatisticMessage } from './messages.js'
+import { getCurrentCostaRicaTime, getTargetDate } from './helpers.js'
+import { getAllUsersIdsQuery, getMonthStatisticQuery, getUserNameByIdQuery } from './queries.js'
+import { monthStatisticAdminMessage, monthStatisticMessage } from './messages.js'
 
-export const startMonthlyNotificationTimer = (sendMessage) => {
-  const firstDayInMonth = dayjs().format('YYYY-MM-01')
-  let targetDate = dayjs(firstDayInMonth).add(1, 'month')
+export const startMonthlyNotificationTimer = (sendMessage, adminsIds) => {
+  let targetDate = getTargetDate()
 
   setInterval(async () => {
     const currentTime = getCurrentCostaRicaTime()
 
     if (dayjs(currentTime) > targetDate) {
-      const firstDayInMonth = dayjs().format('YYYY-MM-01')
-      targetDate = dayjs(firstDayInMonth).add(1, 'month')
+      targetDate = getTargetDate(true)
 
       const usersIds = await getAllUsersIdsQuery()
 
-      for (const el of usersIds) {
-        const userId = el.user_id
-        const statisticData = await getMonthStatisticQuery(userId)
-        const sum = calculateSum(statisticData)
+      for (const usersIdRecord of usersIds) {
+        const sum = await getMonthStatisticQuery(usersIdRecord.user_id)
 
-        sendMessage(userId, monthStatisticMessage(sum))
+        sendMessage(usersIdRecord.user_id, monthStatisticMessage(sum))
+
+        if (adminsIds.includes(+usersIdRecord.user_id)) {
+          const allUsersIdsData = await getAllUsersIdsQuery()
+          const allUsersIdsExceptCurrentUser = allUsersIdsData.filter(
+            (el) => +el.user_id !== +usersIdRecord.user_id,
+          )
+          const monthSumForEachUser = {}
+
+          for (const el of allUsersIdsExceptCurrentUser) {
+            const id = el.user_id
+            const userName = await getUserNameByIdQuery(id)
+            monthSumForEachUser[userName] = await getMonthStatisticQuery(id)
+          }
+
+          sendMessage(usersIdRecord.user_id, monthStatisticAdminMessage(monthSumForEachUser), {
+            parse_mode: 'HTML',
+          })
+        }
       }
     }
   }, 1000)

@@ -27,20 +27,6 @@ export const addExtraSpacesToTitle = (title, maxTitleLength) => {
   return [...new Array(maxTitleLength - title.length)].reduce((acc, __) => acc + ' ', title)
 }
 
-export const searchTitleMaxLength = (data) => {
-  let maxKeyChars = 0
-
-  for (const key in data) {
-    const month = key.replace(/[^a-zA-Z]/g, '')
-
-    if (month.length > maxKeyChars) {
-      maxKeyChars = month.length
-    }
-  }
-
-  return maxKeyChars
-}
-
 export const getTitleMaxLength = (data) => {
   let maxKeyChars = 0
 
@@ -51,4 +37,11 @@ export const getTitleMaxLength = (data) => {
   }
 
   return maxKeyChars
+}
+
+export const getTargetDate = (isForNextMonth) => {
+  const firstDayInNextMonth = dayjs().format(
+    `YYYY-${+dayjs().format('M') + (isForNextMonth ? 2 : 1)}-01`,
+  )
+  return dayjs(firstDayInNextMonth).add(-1, 'minute')
 }

@@ -25,7 +25,6 @@ import {
   yearStatisticMessage,
 } from './messages.js'
 import {
-  addFakeDataQuery,
   addQuery,
   deleteMutation,
   getAllUsersIdsQuery,
@@ -41,13 +40,13 @@ import {
 dotenv.config()
 
 class App {
-  constructor(port, token, adminIds) {
+  constructor(port, token, adminsIds) {
     this.port = port
     this.app = express()
     this.bot = new Telegraf(token)
     this.sendMessage = createSendMessage(this.bot.telegram.sendMessage.bind(this.bot.telegram))
-    this.adminIds = adminIds.split(',').map((id) => +id)
-    this.notifyWhenUserFillTank = this.adminIds.reduce((acc, cur) => ({ ...acc, [cur]: true }), {})
+    this.adminsIds = adminsIds.split(',').map((id) => +id)
+    this.notifyWhenUserFillTank = this.adminsIds.reduce((acc, cur) => ({ ...acc, [cur]: true }), {})
     this.broadcast = (ids, message) => ids.map((id) => this.sendMessage(id, message))
   }
 
@@ -63,7 +62,7 @@ class App {
     this.bot.command('help', async (ctx) => {
       const userId = ctx.update.message.from.id
 
-      if (this.adminIds.includes(userId)) {
+      if (this.adminsIds.includes(userId)) {
         await this.sendMessage(userId, adminHelpMessage())
       } else {
         await this.sendMessage(userId, helpMessage())
@@ -76,7 +75,7 @@ class App {
 
       await this.sendMessage(userId, monthStatisticMessage(sum))
 
-      if (this.adminIds.includes(userId)) {
+      if (this.adminsIds.includes(userId)) {
         const allUsersIdsData = await getAllUsersIdsQuery()
         const allUsersIdsExceptCurrentUser = allUsersIdsData.filter((el) => +el.user_id !== userId)
         const monthSumForEachUser = {}
@@ -134,7 +133,7 @@ class App {
     this.bot.command('user_fill_tank_on', async (ctx) => {
       const userId = ctx.update.message.from.id
 
-      if (this.adminIds.includes(userId)) {
+      if (this.adminsIds.includes(userId)) {
         this.notifyWhenUserFillTank[userId] = true
 
         await this.sendMessage(userId, successfullyChangedMessage())
@@ -146,7 +145,7 @@ class App {
     this.bot.command('user_fill_tank_off', async (ctx) => {
       const userId = ctx.update.message.from.id
 
-      if (this.adminIds.includes(userId)) {
+      if (this.adminsIds.includes(userId)) {
         this.notifyWhenUserFillTank[userId] = false
 
         await this.sendMessage(userId, successfullyChangedMessage())
@@ -164,7 +163,7 @@ class App {
         await addQuery(userId, userName, amount)
         await this.sendMessage(userId, successfullyRecordedMessage())
 
-        const adminsIdsToNotify = this.adminIds.filter(
+        const adminsIdsToNotify = this.adminsIds.filter(
           (adminId) => adminId !== userId && this.notifyWhenUserFillTank[adminId],
         )
 
@@ -176,9 +175,9 @@ class App {
 
     this.bot.launch()
     this.app.listen(this.port, () => console.log(`My server is running on port ${this.port}`))
-    startMonthlyNotificationTimer(this.sendMessage)
+    startMonthlyNotificationTimer(this.sendMessage, this.adminsIds)
   }
 }
 
-const app = new App(process.env.PORT, process.env.TOKEN, process.env.ADMIN_IDS)
+const app = new App(process.env.PORT, process.env.TOKEN, process.env.ADMINS_IDS)
 app.start()

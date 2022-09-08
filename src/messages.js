@@ -1,4 +1,4 @@
-import { addExtraSpacesToTitle, getTitleMaxLength, searchTitleMaxLength } from './helpers.js'
+import { addExtraSpacesToTitle, getTitleMaxLength } from './helpers.js'
 import dayjs from 'dayjs'
 
 export const welcomeMessage = () => {
