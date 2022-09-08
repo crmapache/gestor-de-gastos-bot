@@ -78,7 +78,7 @@ export const getMonthStatisticQuery = (userId) => {
     db.query(
       `SELECT COALESCE(SUM(amount), 0) as sum FROM records WHERE
         user_id = '${userId}'
-        AND MONTH(created_at) = MONTH(now()) - 1
+        AND MONTH(created_at) = MONTH(now())
         AND YEAR(created_at) = YEAR(now())`,
       (err, data) => resolve(data[0]?.sum || 0),
     )

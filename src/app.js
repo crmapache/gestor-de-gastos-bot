@@ -56,7 +56,12 @@ class App {
 
       await this.sendMessage(userId, welcomeMessage())
       await this.sendMessage(userId, instructionsMessage())
-      await this.sendMessage(userId, helpMessage())
+
+      if (this.adminsIds.includes(userId)) {
+        await this.sendMessage(userId, adminHelpMessage())
+      } else {
+        await this.sendMessage(userId, helpMessage())
+      }
     })
 
     this.bot.command('help', async (ctx) => {
