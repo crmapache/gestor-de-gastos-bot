@@ -88,7 +88,11 @@ class App {
         for (const el of allUsersIdsExceptCurrentUser) {
           const id = el.user_id
           const userName = await getUserNameByIdQuery(id)
-          monthSumForEachUser[userName] = await getMonthStatisticQuery(id)
+          const userSum = await getMonthStatisticQuery(id)
+
+          if (userSum > 0) {
+            monthSumForEachUser[userName] = userSum
+          }
         }
 
         await this.sendMessage(userId, monthStatisticAdminMessage(monthSumForEachUser), {
@@ -172,14 +176,14 @@ class App {
           (adminId) => adminId !== userId && this.notifyWhenUserFillTank[adminId],
         )
 
-        this.broadcast(adminsIdsToNotify, userFilledTankMessage(userName, amount))
+        this.broadcast(adminsIdsToNotify, userFilledTankMessage(userName, +amount))
       } else {
         await this.sendMessage(userId, incorrectAmountMessage())
       }
     })
 
     this.bot.launch()
-    this.app.listen(this.port, () => console.log(`My server is running on port ${this.port}`))
+    this.app.listen(this.port, () => console.log(`Bot is running on port ${this.port}`))
     startMonthlyNotificationTimer(this.sendMessage, this.adminsIds)
   }
 }
